@@ -2,16 +2,24 @@
 //  ActiveRecapApp.swift
 //  ActiveRecap
 //
-//  Created by Nick Morello on 12/2/24.
+//  Created by Nick Morello and Jacob Heathcoat on 12/2/24.
 //
 
 import SwiftUI
 
 @main
 struct ActiveRecapApp: App {
+    @State private var splashScreenFinished = false
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if !splashScreenFinished {
+                    SplashScreen(isFinished: $splashScreenFinished)
+                } else {
+                    HomeView()
+                }
+            }
         }
     }
 }
