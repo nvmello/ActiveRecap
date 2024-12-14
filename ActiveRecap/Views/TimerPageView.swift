@@ -32,7 +32,7 @@ class PageVC: UIViewController {
 
 class TimerPageViewController: UIPageViewController {
     let pages: [PageVC]
-    let timerProgress = UIPageControlTimerProgress(preferredDuration: 2)
+    let timerProgress = UIPageControlTimerProgress(preferredDuration: 4)
     let pageControl = UIPageControl()
     var suspensionTimer: Timer?
     
