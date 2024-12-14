@@ -14,6 +14,7 @@ import SwiftUI
 ///
 /// This class serves as the data model for tracking fitness activities, handling HealthKit authorization,
 /// and processing workout data for display in the UI.
+@MainActor
 class WorkoutData: ObservableObject {
     /// The HealthKit store instance used to access health and fitness data
     var healthStore: HKHealthStore?
@@ -109,7 +110,7 @@ class WorkoutData: ObservableObject {
             }
             
             //DispatchQueue.main.async assures the code inside {} is ran on the main thread, necessary to update UI components with @Published
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.workouts = workouts
             }
         }
