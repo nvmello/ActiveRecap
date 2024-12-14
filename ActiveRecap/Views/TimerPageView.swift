@@ -32,7 +32,7 @@ class PageVC: UIViewController {
 
 class TimerPageViewController: UIPageViewController {
     let pages: [PageVC]
-    let timerProgress = UIPageControlTimerProgress(preferredDuration: 2)
+    let timerProgress = UIPageControlTimerProgress(preferredDuration: 4)
     let pageControl = UIPageControl()
     var suspensionTimer: Timer?
     
@@ -62,7 +62,7 @@ class TimerPageViewController: UIPageViewController {
     
     func configurePageControl() {
         timerProgress.delegate = self
-        timerProgress.resetsToInitialPageAfterEnd = false  // Changed to false to match our desired behavior
+        timerProgress.resetsToInitialPageAfterEnd = false
         
         pageControl.numberOfPages = pages.count
         pageControl.progress = timerProgress

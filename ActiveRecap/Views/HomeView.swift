@@ -83,6 +83,19 @@ struct HomeView: View {
                         .padding()
                     
                     Spacer()
+                    
+                    NavigationLink(value: "playground") {
+                        Text("Playground")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue.opacity(0.8))
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 30)
                 }
                 
                 // for menu only, will likely create seperate component to handle
@@ -107,6 +120,8 @@ struct HomeView: View {
             .navigationDestination(for: String.self) { value in
                 if value == "yearReview" {
                     SlidingPageSlideshowView()
+                } else if value == "playground" {
+                    DataPlayground()
                 }
             }
             .navigationBarHidden(true)
