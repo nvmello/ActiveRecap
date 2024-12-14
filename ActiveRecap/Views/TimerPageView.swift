@@ -62,7 +62,7 @@ class TimerPageViewController: UIPageViewController {
     
     func configurePageControl() {
         timerProgress.delegate = self
-        timerProgress.resetsToInitialPageAfterEnd = false  // Changed to false to match our desired behavior
+        timerProgress.resetsToInitialPageAfterEnd = false
         
         pageControl.numberOfPages = pages.count
         pageControl.progress = timerProgress
