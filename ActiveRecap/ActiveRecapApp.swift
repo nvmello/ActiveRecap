@@ -11,7 +11,7 @@ import SwiftUI
 struct ActiveRecapApp: App {
     var body: some Scene {
         WindowGroup {
-            DataPlayground()
+            ContentView()
         }
     }
 }
