@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct ActiveRecapApp: App {
     @State private var splashScreenFinished = false
+    @StateObject private var workoutData = WorkoutData()
     
     var body: some Scene {
         WindowGroup {
@@ -17,7 +18,9 @@ struct ActiveRecapApp: App {
                 if !splashScreenFinished {
                     SplashScreen(isFinished: $splashScreenFinished)
                 } else {
-                    HomeView()
+                    HomeView(workoutData: workoutData).task {
+                        await workoutData.requestAuthorization()
+                    }
                 }
             }
         }

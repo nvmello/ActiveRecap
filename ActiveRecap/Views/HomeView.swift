@@ -11,6 +11,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var showMenu = false
     @State private var showingYearReview = false
+    @ObservedObject var workoutData: WorkoutData
     
     // Calculate if current day is Dec 5th
     // can set to false for testing EoY or not
@@ -121,7 +122,7 @@ struct HomeView: View {
                 if value == "yearReview" {
                     SlidingPageSlideshowView()
                 } else if value == "playground" {
-                    DataPlayground()
+                    DataPlayground(workoutData: workoutData)
                 }
             }
             .navigationBarHidden(true)

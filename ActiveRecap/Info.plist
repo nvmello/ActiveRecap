@@ -4,5 +4,9 @@
 <dict>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Allow Active Recap to read your workout data to show your activity summary</string>
+	<key>CFBundleIdentifier</key>
+	<string>&lt;key&gt;NSHealthShareUsageDescription&lt;/key&gt;
+&lt;string&gt;This app requires access to your health data to track your workouts.&lt;/string&gt;
+</string>
 </dict>
 </plist>

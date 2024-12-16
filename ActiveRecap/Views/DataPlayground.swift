@@ -8,49 +8,77 @@
 import SwiftUI
 
 struct DataPlayground: View {
-    @StateObject var workoutData = WorkoutData()
+    @ObservedObject var workoutData: WorkoutData
     
     var body: some View {
-        VStack {
-            Image(systemName: "dumbbell")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Active Recap")
-        }
-        .padding()
         
-        VStack {
-            HStack {
-                Text("# Workouts: ")
-                    .foregroundColor(.secondary)
+        ZStack {
+            LinearGradient(
+                colors: [.blue.opacity(0.3), .purple.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack {
+                VStack {
+                    Image(systemName: "dumbbell")
+                        .imageScale(.large)
+                        .foregroundStyle(.tint)
+                    Text("Active Recap")
+                }
+                .padding()
                 
-                Text("\(workoutData.getWorkoutCount())")
-                    .fontWeight(.medium)
+                VStack {
+                    HStack {
+                        Text("# Workouts: ")
+                            .foregroundColor(.secondary)
+                        
+                        Text("\(workoutData.getWorkoutCount())")
+                            .fontWeight(.medium)
+                    }
+                    HStack {
+                        Text("Time Exercising: ")
+                            .foregroundColor(.secondary)
+                        
+                        Text("\(workoutData.getWorkoutTime()) Minutes")
+                            .fontWeight(.medium)
+                    }
+                    HStack {
+                        Text("Calories Burned: ")
+                            .foregroundColor(.secondary)
+                        
+                        Text("\(workoutData.getCaloriesBurned())")
+                            .fontWeight(.medium)
+                    }
+                    
+                    VStack {
+                        Text("Best Workout: ")
+                            .foregroundColor(.secondary)
+                            .fontWeight(.black)
+                        Image(systemName: workoutData.getMostIntenseWorkout().icon)
+                            .imageScale(.large)
+                            .foregroundStyle(.primary)
+                        Text("\(workoutData.getMostIntenseWorkout().workoutType)")
+                            .fontWeight(.medium)
+                        Text("on \(workoutData.getMostIntenseWorkout().startDate.formatted(.dateTime.month().day()))")
+                            .fontWeight(.medium)
+                        Text("Total Calories Burned: \(workoutData.getMostIntenseWorkout().caloriesBurned)")
+                            .fontWeight(.medium)
+                        Text("Peak Heart Rate: \(workoutData.getMostIntenseWorkout().peakHeartRate)")
+                            .fontWeight(.medium)
+                    }
+                    .padding()
+                    
+                }
             }
-            HStack {
-                Text("Time Exercising: ")
-                    .foregroundColor(.secondary)
-                
-                Text("\(workoutData.getWorkoutTime()) Minutes")
-                    .fontWeight(.medium)
-            }
-            HStack {
-                Text("Calories Burned: ")
-                    .foregroundColor(.secondary)
-                
-                Text("\(workoutData.getCaloriesBurned())")
-                    .fontWeight(.medium)
-            }
+            
+            
         }
-        .padding()
-        .onAppear {
-            Task {
-                await workoutData.requestAuthorization()
-            }
-        }
+        
     }
 }
 
-#Preview {
-    DataPlayground()
-}
+//#Preview {
+//    DataPlayground()
+//}
