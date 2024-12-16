@@ -53,9 +53,10 @@ struct HomeView: View {
                     
                     // Wrapped component, only visible if day is > 340
                     if isLateYear {
-                        NavigationLink(value: "yearReview") {
+                        Button {
+                            showingYearReview = true
+                        } label: {
                             VStack {
-                                // change to dynamic year!
                                 Text("Your 2024 Review")
                                     .font(.title2)
                                     .fontWeight(.bold)
@@ -67,6 +68,9 @@ struct HomeView: View {
                             .padding()
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(10)
+                        }
+                        .fullScreenCover(isPresented: $showingYearReview) {
+                            SlidingPageSlideshowView()
                         }
                     }
                     
@@ -118,9 +122,7 @@ struct HomeView: View {
                 }
             }
             .navigationDestination(for: String.self) { value in
-                if value == "yearReview" {
-                    SlidingPageSlideshowView()
-                } else if value == "playground" {
+                if value == "playground" {
                     DataPlayground()
                 }
             }
