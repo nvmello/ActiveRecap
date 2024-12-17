@@ -48,20 +48,21 @@ class WorkoutData: ObservableObject {
     /// Calendar instance used for date-based calculations and queries
     private let calendar = Calendar.current
     
-    /// The start date for workout queries, set to January 1st of the current year
-    private var startDate: Date {
-        let firstOfYear = calendar.date(
-            from: DateComponents(
-                year: calendar.component(.year, from: Date()),
-                month: 1,
-                day: 1
-            )
-        )
-        return firstOfYear!
-    }
+    private let startDate: Date
+    private let endDate: Date
     
-    /// The end date for workout queries, defaulting to the current date and time
-    private let endDate: Date = Date()
+    init(year: Int){
+        let currentYear = calendar.component(.year, from: Date())
+        if year == currentYear {
+            self.startDate = calendar.date(from: DateComponents(year: year, month: 1, day: 1))!
+            self.endDate = Date()
+        } else{
+            // If it's a past year, use full year range
+            self.startDate = calendar.date(from: DateComponents(year: year, month: 1, day: 1))!
+            self.endDate = calendar.date(from: DateComponents(year: year, month: 12, day: 31))!
+        }
+        self.healthStore = HKHealthStore()
+    }
     
     /// Predicate used to filter workout samples within the specified date range
     private var datePredicate: NSPredicate {
@@ -93,11 +94,6 @@ class WorkoutData: ObservableObject {
         intensityScore: 0.0,
         icon: "x.circle"
     )
-    
-    /// Initializes the WorkoutData instance with a new HealthKit store
-    init() {
-        self.healthStore = HKHealthStore()
-    }
     
     /// Requests authorization to access HealthKit workout and health data
     ///
@@ -187,46 +183,75 @@ class WorkoutData: ObservableObject {
         
         // 2. Process all data in a single pass
         for workout in workouts {
-            self.addWorkout(workout)
+            await self.addWorkout(workout)
         }
         
         // 3. Log workout data (or update UI if needed)
-//        for workout in self.workouts {
-//            print("\nWorkout Type: \(workout.workoutType)")
-//            print("Start Date: \(workout.startDate)")
-//            print("Duration (minutes): \(workout.duration)")
-//            print("Calories Burned: \(workout.caloriesBurned)")
-//            print("Intensity Score: \(workout.intensityScore)")
-//            print("Average Heart Rate: \(workout.averageHeartRate) bpm")
-//            print("Peak Heart Rate: \(workout.peakHeartRate) bpm")
-//        }
+        for workout in self.workouts {
+            print("\nWorkout Type: \(workout.workoutType)")
+            print("Start Date: \(workout.startDate)")
+            print("Duration (minutes): \(workout.duration)")
+            print("Calories Burned: \(workout.caloriesBurned)")
+            print("Intensity Score: \(workout.intensityScore)")
+            print("Average Heart Rate: \(workout.averageHeartRate) bpm")
+            print("Peak Heart Rate: \(workout.peakHeartRate) bpm")
+        }
     }
     
-    //@Published var typeCounts: [(String, Int)] = []
     /// Processes and adds a single workout to the data model, updating all relevant statistics
     ///
     /// - Parameter workout: The HKWorkout instance to process
     /// - Updates: workoutCount, totalCaloriesBurned, totalWorkoutTime, typeCounts, and mostIntenseWorkout
-    private func addWorkout(_ workout: HKWorkout) {
+    private func addWorkout(_ workout: HKWorkout) async {
         var totalCalories = 0
         var avgHeartRate: Int = 0
         var maxHeartRate: Int = 0
         
+        // Get calories burned from workout statistics
         if let energyBurnedStats = workout.statistics(for: HKQuantityType(.activeEnergyBurned)),
            let calories = energyBurnedStats.sumQuantity()?.doubleValue(for: .kilocalorie()) {
             totalCalories += Int(round(calories))
         }
         
-        // Fetch heart rate data
-        if let heartRateStats = workout.statistics(for: HKQuantityType(.heartRate)) {
-            if let avgHR = heartRateStats.averageQuantity()?.doubleValue(for: .count().unitDivided(by: .minute())) {
-                avgHeartRate = Int(round(avgHR))
-            }
-            if let maxHR = heartRateStats.maximumQuantity()?.doubleValue(for: .count().unitDivided(by: .minute())) {
-                maxHeartRate = Int(round(maxHR))
+        // Query heart rate samples directly for the workout duration
+        if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) {
+            let predicate = HKQuery.predicateForSamples(
+                withStart: workout.startDate,
+                end: workout.endDate,
+                options: .strictStartDate
+            )
+            
+            do {
+                let heartRateSamples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKQuantitySample], Error>) in
+                    let query = HKSampleQuery(
+                        sampleType: heartRateType,
+                        predicate: predicate,
+                        limit: HKObjectQueryNoLimit,
+                        sortDescriptors: nil
+                    ) { _, samples, error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        continuation.resume(returning: samples as? [HKQuantitySample] ?? [])
+                    }
+                    healthStore?.execute(query)
+                }
+                
+                // Calculate average and maximum heart rates from samples
+                if !heartRateSamples.isEmpty {
+                    let heartRates = heartRateSamples.map {
+                        $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    }
+                    avgHeartRate = Int(round(heartRates.reduce(0, +) / Double(heartRates.count)))
+                    maxHeartRate = Int(round(heartRates.max() ?? 0))
+                }
+            } catch {
+                print("Error fetching heart rate data: \(error.localizedDescription)")
             }
         }
         
+        // Create a new workout entry with all collected data
         let newWorkoutEntry = WorkoutEntry(
             workoutType: workout.workoutActivityType.name,
             startDate: workout.startDate,
@@ -242,6 +267,7 @@ class WorkoutData: ObservableObject {
             icon: workout.workoutActivityType.sfSymbol
         )
         
+        // Update aggregate statistics
         self.workoutCount+=1                                        //calculates total number of workouts
         self.totalCaloriesBurned+=totalCalories                    //Calculates total calories burned
         self.totalWorkoutTime+=Int(newWorkoutEntry.duration)   //Calculates the total workout time in minutes
@@ -254,11 +280,17 @@ class WorkoutData: ObservableObject {
     
     /// Calculates an intensity score for a workout based on heart rate and duration
     ///
+    /// The score is calculated using a weighted formula:
+    /// - 30% influence from average heart rate
+    /// - 50% influence from peak heart rate
+    /// - 20% influence from duration
+    /// The final result is divided by 100 to normalize the score
+    ///
     /// - Parameters:
     ///   - avgHeartRate: Average heart rate during the workout in BPM
     ///   - peakHeartRate: Maximum heart rate reached during the workout in BPM
     ///   - duration: Duration of the workout in minutes
-    /// - Returns: A calculated intensity score
+    /// - Returns: A calculated intensity score representing the overall workout intensity
     private func setWorkoutIntensityScore(avgHeartRate: Int, peakHeartRate: Int, duration: Double) -> Double{
         return (Double(avgHeartRate) * 0.3 * Double(peakHeartRate) * 0.5 * Double(duration) * 0.2 ) / 100
     }
