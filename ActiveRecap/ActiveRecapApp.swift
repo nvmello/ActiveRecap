@@ -13,7 +13,7 @@ struct ActiveRecapApp: App {
     
     @State private var splashScreenFinished = false
     @StateObject private var currentYearWorkoutData = WorkoutData(
-        year: Calendar.current.component(.year, from: Date()) - 2
+        year: Calendar.current.component(.year, from: Date())
     )
     @StateObject private var prevYearWorkoutData = WorkoutData(
         year: Calendar.current.component(.year, from: Date()) - 1
