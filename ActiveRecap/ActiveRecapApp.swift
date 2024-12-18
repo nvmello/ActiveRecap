@@ -9,7 +9,15 @@ import SwiftUI
 
 @main
 struct ActiveRecapApp: App {
+
+    
     @State private var splashScreenFinished = false
+    @StateObject private var currentYearWorkoutData = WorkoutData(
+        year: Calendar.current.component(.year, from: Date())
+    )
+    @StateObject private var prevYearWorkoutData = WorkoutData(
+        year: Calendar.current.component(.year, from: Date()) - 1
+    )
     
     var body: some Scene {
         WindowGroup {
@@ -17,7 +25,9 @@ struct ActiveRecapApp: App {
                 if !splashScreenFinished {
                     SplashScreen(isFinished: $splashScreenFinished)
                 } else {
-                    HomeView()
+                    HomeView(workoutData: currentYearWorkoutData).task {
+                        await currentYearWorkoutData.requestAuthorization()
+                    }
                 }
             }
         }
